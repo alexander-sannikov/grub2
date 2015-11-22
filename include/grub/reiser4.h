@@ -27,15 +27,14 @@
 #include <grub/fshelp.h>
 
 
-#define REISERFS_MAX_LABEL_LENGTH 
-#define REISERFS_LABEL_OFFSET
-#define GRUB_DISK_SECTOR_SIZE
+#define REISER4_MAX_LABEL_LENGTH 16
+#define REISER4_LABEL_OFFSET
 #define REISER4_MASTER_OFFSET 65536
-
+#define REISER4_MAGIC_STRING "ReIsEr4"
 /* Master super block structure. It is the same for all reiser4 filesystems,
    so, we can declare it here. It contains common for all format fields like
    block size etc. */
-typedef struct reiser4_master_sb {
+struct reiser4_master_sb {
 	/* Master super block magic. */
 	char magic[16];
 
@@ -49,35 +48,34 @@ typedef struct reiser4_master_sb {
 	char uuid[16];
 
 	/* Filesystem label in use. */
-	char label[16];
-} reiser4_master_sb_t; 
+	char label[REISER4_MAX_LABEL_LENGTH];
+	
+	/*location of diskmap*/
+	grub_uint64_t diskmap;
+}GRUB_PACKED; 
 
 /* Returned when opening a file.  */
-struct grub_reiserfs_data
-{
+struct grub_reiser4_data
+{		
   /*superblock*/
-  struct reiser4_master_sb_t sb;
+  struct reiser4_master_sb sb;
   /*grub disk device*/
   grub_disk_t disk;
 };
 
+struct grub_fshelp_node
+{
+  struct grub_reiser4_data *data;
+  //TODO: Add necessary fields
+};
+
 static grub_err_t grub_reiser4_open (struct grub_file *file, const char *name);
-static grub_err_t grub_reiser4_close (grub_file_t file)
+static grub_err_t grub_reiser4_close (grub_file_t file);
 static grub_err_t grub_reiser4_dir (grub_device_t device, const char *path,
-                   int (*hook) (const char *filename, const struct grub_dirhook_info *info))
+                   int (*hook) (const char *filename, const struct grub_dirhook_info *info));
 static grub_ssize_t grub_reiser4_read (grub_file_t file, char *buf, grub_size_t len);
 static grub_err_t grub_reiser4_uuid (grub_device_t device, char **uuid);
 static grub_err_t grub_reiser4_label (grub_device_t device, char **label);
 
 
-static struct grub_fs grub_reiser4_fs =
-  {
-    .name = "reiser4",
-    .dir = grub_reiser4_dir,
-    .open = grub_reiser4_open,
-    .read = grub_reiser4_read,
-    .close = grub_reiser4_close,
-    .label = grub_reiser4_label,
-    .uuid = grub_reiser4_uuid,//
-    .next = 0
-  };
+
